@@ -1,0 +1,30 @@
+# LensForge Configuration: Point-Mass Gravitational Lens Demonstration
+# Units:
+# - Angles: arcseconds (arcsec)
+# - Distances: Megaparsecs (Mpc)
+# - Lens Mass: Solar masses (M_sun)
+
+lens:
+  model: "point_mass"
+  mass_m_sun: 1.0e11         # Lens mass in Solar masses (10^11 M_sun)
+  d_l_mpc: 1000.0            # Observer-lens angular-diameter distance in Mpc
+  d_s_mpc: 1800.0            # Observer-source angular-diameter distance in Mpc
+  d_ls_mpc: 1100.0           # Lens-source angular-diameter distance in Mpc
+  center_arcsec: [0.0, 0.0]  # Lens center on sky [x, y] in arcsec
+
+source:
+  model: "gaussian"
+  center_arcsec: [0.25, 0.15] # Source offset from optical axis in arcsec
+  sigma_arcsec: 0.12          # Characteristic size (standard deviation) in arcsec
+  amp: 1.0                    # Relative peak surface brightness
+  axis_ratio: 0.85            # Minor/major axis ratio q (b/a)
+  pos_angle_deg: 35.0         # Position angle in degrees
+
+grid:
+  num_pix: 400                # Number of pixels along each spatial dimension
+  field_of_view_arcsec: 4.0   # Total grid width and height in arcsec
+  unit: "arcsec"
+
+visualization:
+  save_figure: true
+  output_filename: "demonstration_point_mass.png"

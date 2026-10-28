@@ -1,0 +1,34 @@
+# LensForge Configuration: Realistic Galaxy Lens (SIE + External Shear)
+# Simulates a massive early-type galaxy deflecting a background compact spiral/elliptical galaxy,
+# producing a giant gravitational arc and multiple counter-images.
+# Units:
+# - Angles: arcseconds (arcsec)
+# - Distances: Megaparsecs (Mpc)
+
+lens:
+  model: "sie_with_shear"
+  theta_e_arcsec: 1.35        # Characteristic Einstein radius in arcsec
+  axis_ratio: 0.72            # Ellipticity axis ratio q = b/a
+  pos_angle_deg: 45.0         # Lens position angle (degrees counterclockwise from East)
+  center_arcsec: [0.0, 0.0]   # Deflector centroid on sky
+  shear:
+    gamma: 0.06               # External shear magnitude from cluster/group environment
+    phi_gamma_deg: 20.0       # External shear orientation angle in degrees
+
+source:
+  model: "gaussian"
+  center_arcsec: [0.18, 0.12] # Offset source producing giant arc / fold configuration
+  sigma_arcsec: 0.10          # Half-light characteristic radius in arcsec
+  amp: 1.0                    # Relative peak surface brightness
+  axis_ratio: 0.80            # Source intrinsic ellipticity
+  pos_angle_deg: 30.0         # Source intrinsic orientation
+
+grid:
+  num_pix: 450                # Grid dimension (450 x 450 pixels)
+  field_of_view_arcsec: 4.5   # Field of view in arcsec (-2.25 to +2.25)
+  unit: "arcsec"
+
+visualization:
+  save_figure: true
+  output_filename: "demonstration_galaxy_sie.png"
+
