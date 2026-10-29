@@ -1,40 +1,50 @@
 # LensForge: Gravitational Lens Reconstruction Research Project
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-44%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-50%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**LensForge** is a scientific research framework in computational astrophysics designed to model gravitational lensing and reconstruct the intrinsic morphologies of distant galaxies from astronomical observations.
+**LensForge** is a scientific research framework in computational astrophysics designed to solve the **Inverse Gravitational Lens Problem**: taking distorted, giant astronomical arcs observed by space telescopes and reconstructing the intrinsic, unlensed morphologies of distant galaxies.
 
-The ultimate physical forward model realized by LensForge is:
+The complete physical forward and inverse model is:
 
-$$\mathcal{D} = \mathcal{P} * \mathcal{L}_{\boldsymbol{\eta}}(\mathcal{S}) + \mathcal{N}$$
+$$\mathcal{D} = \mathcal{P} * \mathcal{L}_{\boldsymbol{\eta}}(\mathcal{S}) + \mathcal{N} \quad \xrightarrow{\text{LensForge Inversion}} \quad \hat{\mathcal{S}} = \left(\mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{F} + \lambda \mathbf{R}\right)^{-1} \mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{d}$$
 
 where:
 - $\mathcal{S}$ is the intrinsic 2D surface-brightness distribution of the background source galaxy.
-- $\mathcal{L}_{\boldsymbol{\eta}}$ is the gravitational lensing transformation parameterized by mass parameters $\boldsymbol{\eta}$.
+- $\mathcal{L}_{\boldsymbol{\eta}}$ is the gravitational lens mapping parameterized by mass parameters $\boldsymbol{\eta}$.
 - $\mathcal{P}$ is the telescope Point Spread Function (PSF).
-- $\mathcal{N}$ represents observational noise (Poisson shot noise and CCD read noise).
+- $\mathcal{N}$ represents observational noise (Poisson photon shot noise and detector read noise).
 - $\mathcal{D}$ is the observed astronomical image.
+- $\hat{\mathcal{S}}$ is the maximum a posteriori (MAP) reconstructed unlensed galaxy image.
 
 ---
 
-## 1. Current Implementation Status (Phases 1 & 2 Completed)
+## 1. Current Implementation Status (Version 0.3.0)
 
-LensForge currently implements the complete, validated mathematical foundation for both **point-mass gravitational lensing** and **realistic galaxy lens profiles (SIS, SIE, External Shear, CompositeLens)**:
+LensForge provides both forward modeling and **regularized Bayesian source reconstruction**:
 
-- **SI Constants & Angular Conversions**: Standardized CODATA constants ($c, G, M_{\odot}$) and verified unit transformations between radians, arcseconds, and degrees.
-- **Relativistic Einstein Radius**: Rigorous cosmological angular-diameter distance modeling ($D_l, D_s, D_{ls}$) for point masses and Singular Isothermal Spheres ($\theta_E = 4\pi (\sigma_v/c)^2 D_{ls}/D_s$).
-- **Deflection & Potential**: Thin-screen ray-tracing $\boldsymbol{\beta} = \boldsymbol{\theta} - \boldsymbol{\alpha}(\boldsymbol{\theta})$, effective 2D lens potential $\psi(\boldsymbol{\theta})$, and numerical verification that $\nabla \psi = \boldsymbol{\alpha}$ via central finite differences.
-- **Analytical Image Solutions & Invariants**:
-  - Point-mass: roots ($\theta_+, \theta_-$), algebraic invariants ($\theta_+ \theta_- = -\theta_E^2$, $\theta_+ + \theta_- = \beta$), and Einstein rings for $\beta = 0$.
-  - SIS: constant image separation $\theta_+ - \theta_- = 2\theta_E$, magnification invariant $\mu_+ + \mu_- = 2.0$, and single-image cutoff outside caustic.
-- **Magnification & Parity Engine**: Signed image magnifications with rationalized cancellation-free expressions eliminating numerical underflow for large impact parameters ($u \gg 1$), verifying the invariant $\mu_+ + \mu_- = 1.0$.
-- **Singular Isothermal Ellipsoid (SIE)**: Closed-form complex deflection formulas following Kormann, Schneider & Bartelmann (1994) / Keeton (2001), arbitrary position angles $\phi$, potential evaluated via Euler's homogeneous function theorem ($\psi = \boldsymbol{\theta} \cdot \boldsymbol{\alpha}$), and smooth limit to SIS as $q \to 1$.
-- **External Gravitational Shear**: Cartesian $(\gamma_1, \gamma_2)$ and polar $(\gamma, \phi_\gamma)$ tidal formulations with zero convergence ($\kappa = 0$) and constant magnification $\mu = 1 / (1 - \gamma^2)$.
-- **Composite Lens Superposition**: Unified `CompositeLens` class to assemble multi-component models (e.g. SIE halo + external environmental shear).
-- **Source Simulation & Visualization**: 2D Gaussian galaxy profiles sampled via backwards ray tracing under Liouville's theorem, with publication-quality Matplotlib figures.
-- **Automated Test Suite**: 44 deterministic unit and integration tests passing in $< 0.5$ seconds with 100% pass rate.
+- **Inverse Problem Engine ([`lensforge.inversion`](src/lensforge/inversion))**:
+  - Implementation of the **Warren & Dye (2003) / Suyu et al. (2006) Semilinear Inversion** algorithm.
+  - Sparse bilinear deflection mapping operator $\mathbf{L}$.
+  - Combined telescope response operator $\mathbf{F} = \mathbf{B} \mathbf{L}$.
+  - Spatial prior regularization matrices $\mathbf{R}$ (Laplacian curvature, 1st-order gradient, and 0th-order norm).
+  - Automated Bayesian optimal regularization parameter ($\lambda^*$) search maximizing log-evidence $\ln P(\mathbf{d}|\lambda, \boldsymbol{\eta})$.
+  - Outputs full $\chi^2$, reduced $\chi^2/\text{dof} \approx 1.0$, residuals, and reconstructed source morphology.
+- **Telescope Instrument Optics & Noise ([`lensforge.instrument`](src/lensforge/instrument))**:
+  - 2D Gaussian and pixelated telescope PSFs with fast FFT convolution and flux conservation.
+  - Poisson photon shot noise from galaxy and background sky + Gaussian detector readout noise.
+  - Generation of variance and 1-sigma uncertainty maps $\mathbf{C}_D$ for rigorous $\chi^2$ statistical weighting.
+- **Parametric Lens Profiles ([`lensforge.physics.models`](src/lensforge/physics/models))**:
+  - Point-mass (Schwarzschild lens with analytical image roots $\theta_{\pm}$ and magnification invariants).
+  - Singular Isothermal Sphere (SIS) parameterized by 1D velocity dispersion $\sigma_v$.
+  - Singular Isothermal Ellipsoid (SIE, Kormann et al. 1994) with arbitrary position angles $\phi$ and Euler potential theorem.
+  - External Gravitational Shear ($\gamma_1, \gamma_2$) for environmental tidal perturbations.
+  - Multi-component `CompositeLens` superpositions.
+- **Command-Line Interface (CLI)**:
+  - Ready-to-use executable command `lensforge-reconstruct` for one-line automated scientific reconstructions.
+- **Automated Test Suite**:
+  - **50 deterministic unit and integration tests** passing with 100% pass rate.
 
 ---
 
@@ -142,23 +152,26 @@ tests/test_sis_lens.py ........                                          [100%]
 
 ---
 
-## 5. Running the Demonstration Scripts
+## 5. Running Reconstructions & Demonstrations
 
-### Point-Mass Gravitational Lens
-Execute the point-mass forward simulation:
-
-```bash
-python scripts/demonstrate_point_mass_lens.py
-```
-This generates `outputs/demonstration_point_mass.png` illustrating the source plane, image plane, Einstein ring, and analytical image positions ($\theta_+, \theta_-$).
-
-### Realistic Galaxy Lens (SIE + External Shear)
-Execute the realistic galaxy forward simulation:
+### Complete Inverse Reconstruction (The Core Product)
+Run the full Bayesian source reconstruction pipeline from the command line:
 
 ```bash
-python scripts/demonstrate_galaxy_lens.py
+lensforge-reconstruct --output-dir outputs
 ```
-This simulates a massive elliptical galaxy ($q=0.72, \phi=45^{\circ}, \gamma=0.06$) deflecting a background galaxy into giant gravitational arcs, saving a 3-panel diagnostic visualization to `outputs/demonstration_galaxy_sie.png`.
+*(Or run `python scripts/reconstruct_galaxy.py`)*
+
+This pipeline:
+1. Simulates an observed space-telescope image containing distorted, giant arcs with realistic PSF blurring and noise.
+2. Inverts the gravitational lens equation using regularized linear inversion on a free pixelated source grid.
+3. Automatically identifies the Bayesian optimal regularization parameter $\lambda^*$.
+4. Unveils the intrinsic morphology of the background galaxy.
+5. Saves the publication-quality 6-panel scientific dashboard to `outputs/reconstruction_dashboard.png`.
+
+### Forward Simulation Demos
+- **Point-Mass Lens**: `python scripts/demonstrate_point_mass_lens.py` (saves `outputs/demonstration_point_mass.png`).
+- **Realistic Galaxy Lens (SIE + Shear)**: `python scripts/demonstrate_galaxy_lens.py` (saves `outputs/demonstration_galaxy_sie.png`).
 
 ---
 

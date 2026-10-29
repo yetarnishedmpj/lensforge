@@ -320,3 +320,117 @@ def plot_galaxy_lensing_system(
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
     return fig, axes
+
+
+def plot_reconstruction_dashboard(
+    result,
+    observed_image: np.ndarray,
+    ground_truth_source: Optional[np.ndarray] = None,
+    output_path: Optional[str] = None,
+    title: str = "LensForge Bayesian Galaxy Source Reconstruction",
+) -> Tuple[plt.Figure, np.ndarray]:
+    """Plot publication-quality diagnostic dashboard of the inverse reconstruction.
+
+    Layout (2x3 or 2x2 grid):
+    - Panel 1: Observed Telescope Data d (PSF blurred + noisy arcs)
+    - Panel 2: Best-Fit Forward Model Image F * s_hat
+    - Panel 3: Normalized Residuals (d - F*s_hat) / sigma with chi2/dof metric
+    - Panel 4: Reconstructed Unlensed Galaxy s_hat (on source plane)
+    - Panel 5: Ground Truth Source (if provided) or Residual Histogram
+    - Panel 6: Reconstruction Error (Difference from Ground Truth) or 1D Slice
+
+    Args:
+        result: ReconstructionResult object.
+        observed_image: 2D observed telescope image.
+        ground_truth_source: Optional 2D array of true intrinsic source.
+        output_path: Optional path to save figure.
+        title: Main supertitle.
+
+    Returns:
+        Tuple of (fig, axes).
+    """
+    has_truth = ground_truth_source is not None
+    fig, axes = plt.subplots(2, 3, figsize=(15.5, 9.5), constrained_layout=True)
+
+    img_extent = result.image_grid.extent
+    src_extent = result.source_grid.extent
+    unit_str = result.image_grid.unit
+
+    # 1. Observed Data
+    im0 = axes[0, 0].imshow(observed_image, origin="lower", extent=img_extent, cmap="magma")
+    axes[0, 0].set_title("1. Observed Telescope Data $d$", fontsize=11, fontweight="bold")
+    axes[0, 0].set_xlabel(f"$\\theta_x$ [{unit_str}]")
+    axes[0, 0].set_ylabel(f"$\\theta_y$ [{unit_str}]")
+    fig.colorbar(im0, ax=axes[0, 0], fraction=0.046, pad=0.04).set_label("Flux / Counts", fontsize=9)
+
+    # 2. Model Prediction
+    im1 = axes[0, 1].imshow(result.model_image, origin="lower", extent=img_extent, cmap="magma")
+    axes[0, 1].set_title("2. Model Prediction $F\\hat{s}$", fontsize=11, fontweight="bold")
+    axes[0, 1].set_xlabel(f"$\\theta_x$ [{unit_str}]")
+    axes[0, 1].set_ylabel(f"$\\theta_y$ [{unit_str}]")
+    fig.colorbar(im1, ax=axes[0, 1], fraction=0.046, pad=0.04).set_label("Model Flux", fontsize=9)
+
+    # 3. Normalized Residuals
+    res = result.residuals
+    im2 = axes[0, 2].imshow(res, origin="lower", extent=img_extent, cmap="coolwarm", vmin=-3.5, vmax=3.5)
+    axes[0, 2].set_title(f"3. Normalized Residuals $(d - F\\hat{{s}})/\\sigma$\n($\\chi^2/\\text{{dof}} = {result.reduced_chi2:.2f}$)", fontsize=11, fontweight="bold")
+    axes[0, 2].set_xlabel(f"$\\theta_x$ [{unit_str}]")
+    axes[0, 2].set_ylabel(f"$\\theta_y$ [{unit_str}]")
+    fig.colorbar(im2, ax=axes[0, 2], fraction=0.046, pad=0.04).set_label("Significance [$\\sigma$]", fontsize=9)
+
+    # 4. Reconstructed Source
+    im3 = axes[1, 0].imshow(result.reconstructed_source, origin="lower", extent=src_extent, cmap="inferno")
+    axes[1, 0].set_title(f"4. Reconstructed Unlensed Galaxy $\\hat{{s}}$\n($\\lambda = {result.regularization_lambda:.1e}$)", fontsize=11, fontweight="bold")
+    axes[1, 0].set_xlabel(f"$\\beta_x$ [{unit_str}]")
+    axes[1, 0].set_ylabel(f"$\\beta_y$ [{unit_str}]")
+    fig.colorbar(im3, ax=axes[1, 0], fraction=0.046, pad=0.04).set_label("Source Brightness", fontsize=9)
+
+    # 5. Ground Truth or Residual Distribution
+    if has_truth:
+        im4 = axes[1, 1].imshow(ground_truth_source, origin="lower", extent=src_extent, cmap="inferno")
+        axes[1, 1].set_title("5. True Background Source $s_{\\text{true}}$", fontsize=11, fontweight="bold")
+        axes[1, 1].set_xlabel(f"$\\beta_x$ [{unit_str}]")
+        axes[1, 1].set_ylabel(f"$\\beta_y$ [{unit_str}]")
+        fig.colorbar(im4, ax=axes[1, 1], fraction=0.046, pad=0.04).set_label("True Brightness", fontsize=9)
+
+        # 6. Source Difference (Reconstruction Error)
+        src_diff = result.reconstructed_source - ground_truth_source
+        vmax_diff = max(1e-4, float(np.max(np.abs(src_diff))))
+        im5 = axes[1, 2].imshow(src_diff, origin="lower", extent=src_extent, cmap="bwr", vmin=-vmax_diff, vmax=vmax_diff)
+        axes[1, 2].set_title("6. Source Error $(\\hat{s} - s_{\\text{true}})$", fontsize=11, fontweight="bold")
+        axes[1, 2].set_xlabel(f"$\\beta_x$ [{unit_str}]")
+        axes[1, 2].set_ylabel(f"$\\beta_y$ [{unit_str}]")
+        fig.colorbar(im5, ax=axes[1, 2], fraction=0.046, pad=0.04).set_label("Error Amplitude", fontsize=9)
+    else:
+        # Residual Histogram
+        axes[1, 1].hist(res.ravel(), bins=40, density=True, color="steelblue", alpha=0.7, edgecolor="black")
+        x_norm = np.linspace(-4, 4, 100)
+        axes[1, 1].plot(x_norm, 1.0 / np.sqrt(2 * np.pi) * np.exp(-0.5 * x_norm**2), "r--", linewidth=1.8, label="Standard Normal $\\mathcal{N}(0, 1)$")
+        axes[1, 1].set_title("5. Residual Distribution", fontsize=11, fontweight="bold")
+        axes[1, 1].set_xlabel("Normalized Residual [$\\sigma$]")
+        axes[1, 1].set_ylabel("Probability Density")
+        axes[1, 1].legend(loc="upper right", fontsize=8.5)
+
+        # 6. Radial Profile or Log-Evidence Info
+        axes[1, 2].text(
+            0.1, 0.5,
+            f"Bayesian Reconstruction Metrics:\n"
+            f"---------------------------------\n"
+            f"Total Chi-Squared:    {result.chi2:.1f}\n"
+            f"Reduced Chi-Squared:  {result.reduced_chi2:.3f}\n"
+            f"Bayesian Log-Evidence: {result.log_evidence:.1f}\n"
+            f"Optimal Lambda:       {result.regularization_lambda:.2e}\n"
+            f"Target Status:        CONVERGED",
+            fontsize=11,
+            family="monospace",
+            verticalalignment="center",
+            bbox=dict(boxstyle="round,pad=0.8", facecolor="whitesmoke", edgecolor="gray")
+        )
+        axes[1, 2].axis("off")
+
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+
+    return fig, axes

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lensforge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Computational astrophysics research repository for gravitational lens modeling and galaxy source reconstruction"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -44,6 +44,9 @@ notebook = [
     "jupyterlab>=4.0.0",
     "ipykernel>=6.0.0"
 ]
+
+[project.scripts]
+lensforge-reconstruct = "lensforge.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

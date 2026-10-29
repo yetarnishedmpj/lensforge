@@ -4,7 +4,7 @@ LensForge provides numerical methods, forward models, and inversion frameworks
 for gravitational lens modeling and galaxy source reconstruction.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "LensForge Research Team"
 
 from lensforge.constants import (
@@ -28,6 +28,18 @@ from lensforge.physics.models import (
     SingularIsothermalEllipsoid,
     SingularIsothermalSphere,
 )
+from lensforge.instrument import (
+    BasePSF,
+    GaussianPSF,
+    PixelatedPSF,
+    add_observation_noise,
+)
+from lensforge.inversion import (
+    ReconstructionResult,
+    SourceReconstructor,
+    build_lens_mapping_matrix,
+    build_regularization_matrix,
+)
 
 __all__ = [
     "__version__",
@@ -48,4 +60,12 @@ __all__ = [
     "SingularIsothermalEllipsoid",
     "ExternalShear",
     "CompositeLens",
+    "BasePSF",
+    "GaussianPSF",
+    "PixelatedPSF",
+    "add_observation_noise",
+    "SourceReconstructor",
+    "ReconstructionResult",
+    "build_lens_mapping_matrix",
+    "build_regularization_matrix",
 ]
