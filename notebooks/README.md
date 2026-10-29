@@ -1,76 +1,59 @@
-# LensForge Interactive Notebooks & Google Colab Workflow
+# LensForge Interactive Research Notebooks
 
-This directory is designated for interactive research notebooks exploring gravitational lens modeling, forward simulation, and galaxy source reconstruction.
-
----
-
-## 1. Google Colab Execution Workflow
-
-LensForge is engineered to be 100% compatible with Google Colab (CPU and GPU runtimes) with zero proprietary dependencies.
-
-### Step 1: Transferring Repository to Colab
-
-You can transfer the repository to Google Colab using either **GitHub Clone** or **ZIP Archive Upload**:
-
-#### Option A: Clone from GitHub
-In a new Colab notebook cell:
-```python
-!git clone https://github.com/<your-username>/lensforge.git
-%cd lensforge
-```
-
-#### Option B: Upload ZIP Archive
-1. Compress your local repository into `lensforge.zip`.
-2. In Colab, upload `lensforge.zip` using the file browser or via code:
-```python
-from google.colab import files
-uploaded = files.upload()  # select lensforge.zip
-!unzip -q lensforge.zip
-%cd lensforge
-```
+This directory contains interactive Jupyter research notebooks for gravitational lens modeling, forward simulation, and galaxy source reconstruction.
 
 ---
 
-### Step 2: Install Package in Editable Mode
+## 1. Local Interactive Research Workflow
 
-Install `lensforge` in editable mode directly into the active Colab virtual environment:
+LensForge is engineered as a first-class local scientific Python package. You can run all notebooks locally on your machine with full access to your hardware (multi-core CPU and NVIDIA CUDA GPU).
 
-```python
-!pip install -e .
+### Step 1: Install Package & Notebook Support
+
+Ensure your virtual environment is active, then install `lensforge` in editable mode with development and notebook dependencies:
+
+```bash
+pip install -e ".[dev,notebook]"
 ```
 
 Verify the installation:
-```python
-import lensforge
-print(f"LensForge version: {lensforge.__version__}")
+```bash
+python -c "import lensforge; print('LensForge version:', lensforge.__version__)"
 ```
 
 ---
 
-### Step 3: Persistent Storage Warning
+### Step 2: Launch Jupyter Locally
 
-> [!WARNING]
-> Google Colab runtime instances are **ephemeral** and will terminate after idle timeout or disconnection. All files stored on the local virtual machine will be permanently erased.
->
-> To persist experimental results, figures, MCMC chains, and reconstructed source matrices, always mount Google Drive:
-> ```python
-> from google.colab import drive
-> drive.mount('/content/drive')
->
-> # Save outputs to persistent storage
-> output_dir = "/content/drive/MyDrive/LensForge_Experiments/run_01"
-> ```
+You can launch Jupyter Lab or Jupyter Notebook directly from your terminal:
+
+```bash
+jupyter lab
+```
+*(Or `jupyter notebook`)*
+
+Alternatively, open any `.ipynb` file directly inside your IDE (e.g., VS Code or Cursor) and select your active Python environment as the Jupyter kernel.
 
 ---
 
-## 2. Planned Research Notebooks
+### Step 3: Local Artifact Persistence
 
-The following exploratory notebooks are planned across the development roadmap:
+All notebook simulations, reconstructed source matrices, and publication-quality diagnostic plots are saved directly to your local project directory:
 
-| Notebook | Focus | Phase |
+```
+lensforge/outputs/
+```
+
+Outputs are automatically organized locally on your fast SSD, with zero runtime limits, timeout disconnections, or cloud storage restrictions.
+
+---
+
+## 2. Available & Planned Research Notebooks
+
+| Notebook | Focus | Status |
 | :--- | :--- | :--- |
-| `01_point_mass_lensing.ipynb` | Point-mass deflection, Einstein rings, analytical image positions, and parity. | Phase 1 |
-| `02_singular_isothermal_sphere.ipynb` | Singular Isothermal Sphere (SIS) and Singular Isothermal Ellipsoid (SIE) mass profiles. | Phase 2 |
-| `03_telescope_forward_model.ipynb` | Point Spread Function (PSF) convolution, pixelation, and observational noise modeling. | Phase 3 |
-| `04_semilinear_source_inversion.ipynb` | Inverting lens mapping using Warren & Dye / Treu regularized matrix methods. | Phase 4 |
-| `05_lens_parameter_inference.ipynb` | MCMC posterior sampling and nonlinear optimization of macro-lens parameters. | Phase 5 |
+| `01_point_mass_and_galaxy_lensing.ipynb` | Point-mass deflection, Einstein rings, SIS velocity dispersion, SIE (Kormann et al. 1994), and external shear. | **Available** ✅ |
+| `02_telescope_forward_model.ipynb` | Point Spread Function (PSF) 2D FFT convolution, pixel integration, and Poisson/read noise. | Phase 3 (Planned) |
+| `03_semilinear_source_inversion.ipynb` | Regularized galaxy source reconstruction using Warren & Dye / Treu linear matrix inversion. | Phase 4 (Planned) |
+| `04_lens_parameter_inference.ipynb` | Bayesian MCMC posterior sampling and nonlinear optimization of macro-lens parameters. | Phase 5 (Planned) |
+| `05_space_telescope_reconstruction.ipynb` | Reconstruction pipelines for real HST and JWST strong lensing observations. | Phase 6 (Planned) |

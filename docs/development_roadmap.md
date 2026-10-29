@@ -95,10 +95,11 @@ flowchart LR
 
 ---
 
-### Phase 6: Space Telescope Data & Colab High-Performance Benchmarking
+### Phase 6: Space Telescope Data & Local Workstation Acceleration
 - **Observational Datasets**:
   - Ingestion of FITS data from Hubble Space Telescope (HST SLACS, CANDELS) and JWST (COSMOS-Web) strong lenses.
   - Astrometric alignment and background subtraction pipelines.
 - **Execution Scaling**:
-  - Google Colab GPU-accelerated ray-tracing (JAX/PyTorch drop-in backends).
-  - Colab notebook tutorials reproducing published astrophysical reconstructions.
+  - Local GPU-accelerated ray-tracing (NVIDIA CUDA via PyTorch / CuPy backends).
+  - Multi-threaded CPU evaluation for fast MCMC parameter exploration.
+  - Standalone scientific replication pipelines reproducing published astrophysical reconstructions.

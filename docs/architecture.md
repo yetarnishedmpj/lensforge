@@ -7,7 +7,7 @@ LensForge is designed as a modular, scientific research framework for gravitatio
 1. **Rigorous Separation of Concerns**: Mathematical physics is completely decoupled from rendering/visualization and data I/O.
 2. **Deterministic & Vectorized Numerical Core**: Core physical routines rely exclusively on NumPy and SciPy array operations, supporting both scalar evaluations and vectorized 2D grids without memory bloat.
 3. **Explicit Error Policies**: Singularities (e.g., central ray divergence at $r=0$) and unphysical boundaries ($M \le 0$, $D_s \le D_l$) are trapped explicitly rather than silently propagating `NaN`s.
-4. **Colab & Headless Portability**: Zero hardcoded local file paths, zero non-standard GUI dependencies, and simple editable installation (`pip install -e .`).
+4. **Local Workstation & CLI Portability**: Zero hardcoded local file paths, zero non-standard GUI dependencies, native cross-platform support (Windows/Linux/macOS), and simple editable installation (`pip install -e .`).
 
 ---
 
@@ -15,7 +15,7 @@ LensForge is designed as a modular, scientific research framework for gravitatio
 
 ```
 lensforge/
-├── README.md                          # High-level overview, quickstart, Colab instructions
+├── README.md                          # High-level overview, quickstart, local workflow
 ├── PRD.md                             # Product Requirements Document
 ├── pyproject.toml                     # Modern PEP 518/621 build specification
 ├── .gitignore                         # Scientific Python / Jupyter / IDE gitignore
@@ -65,7 +65,7 @@ lensforge/
 │   ├── demonstrate_point_mass_lens.py # Point-mass forward simulation demonstration
 │   └── demonstrate_galaxy_lens.py     # Realistic galaxy SIE+shear arc demonstration
 └── notebooks/
-    └── README.md                      # Google Colab execution instructions & Drive workflow
+    └── README.md                      # Local interactive research notebook instructions
 ```
 
 ---

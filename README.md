@@ -92,7 +92,7 @@ lensforge/
 │   ├── demonstrate_point_mass_lens.py # Point-mass forward simulation script
 │   └── demonstrate_galaxy_lens.py     # Realistic galaxy SIE+shear arc demonstration
 └── notebooks/
-    └── README.md                      # Google Colab instructions & Drive persistence
+    └── README.md                      # Local interactive research notebook instructions
 ```
 
 ---
@@ -162,49 +162,44 @@ This simulates a massive elliptical galaxy ($q=0.72, \phi=45^{\circ}, \gamma=0.0
 
 ---
 
-## 6. Google Colab Execution Guide
+## 6. Local Scientific Workflow & Interactive Notebooks
 
-LensForge is structured for seamless portability to Google Colab.
+LensForge is designed as a standalone, high-performance local Python application. It runs natively on your machine, leveraging multi-core CPUs and local GPUs without cloud dependencies or timeouts.
 
-### Step 1: Transfer Repository to Colab
-Open a new notebook in Google Colab and run:
+### Local Python Environment Setup
 
-```python
-!git clone https://github.com/<your-username>/lensforge.git
-%cd lensforge
+Create and activate an isolated virtual environment:
+
+```bash
+# Windows (PowerShell)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Linux / macOS
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-Or upload `lensforge.zip` and extract:
-```python
-!unzip -q lensforge.zip
-%cd lensforge
+Install `lensforge` in editable mode with development and notebook tools:
+
+```bash
+pip install -e ".[dev,notebook]"
 ```
 
-### Step 2: Install in Editable Mode
-```python
-!pip install -e .
+### Running Interactive Jupyter Notebooks Locally
+
+Launch Jupyter Lab or Notebook server from the project root:
+
+```bash
+jupyter lab
 ```
 
-### Step 3: Run the Galaxy Demonstration
-```python
-from scripts.demonstrate_galaxy_lens import run_galaxy_demonstration
-from pathlib import Path
-from IPython.display import Image, display
+Open [`notebooks/01_point_mass_and_galaxy_lensing.ipynb`](notebooks/01_point_mass_and_galaxy_lensing.ipynb) to interactively modify lens models, explore ray-tracing grids, and visualize gravitational arcs.
 
-output_path = run_galaxy_demonstration(Path("outputs"))
-display(Image(filename=str(output_path)))
+All generated simulation outputs and figures are persisted locally in:
 ```
-
-### Step 4: Persistent Storage Warning
-
-> [!WARNING]
-> Google Colab runtime instances are temporary virtual machines. All local files will be deleted upon disconnection.
->
-> Mount Google Drive to preserve experiment artifacts:
-> ```python
-> from google.colab import drive
-> drive.mount('/content/drive')
-> ```
+lensforge/outputs/
+```
 
 ---
 

@@ -43,7 +43,7 @@ where:
 - Continuous 2D Gaussian galaxy source modeling and backwards ray-traced surface brightness sampling under Liouville's theorem.
 - Publication-quality visualization routines and diagnostic forward modeling scripts.
 - 100% deterministic test coverage across all mathematical foundations (44 unit and integration tests).
-- Complete Google Colab transfer and execution workflow.
+- Standalone local workstation execution, CLI tooling, and persistent output management.
 
 ### Out-of-Scope (Deferred to Subsequent Phases):
 - Instrument point spread function (PSF) convolution (Phase 3).
@@ -104,8 +104,8 @@ where:
 
 ### NFR-1: Portability & Environments
 - Compatible with Python 3.11+.
-- Fully executable in headless Linux/macOS environments and Google Colab virtual machines.
-- Standard dependencies limited to NumPy, SciPy, Matplotlib, and PyYAML.
+- Native cross-platform execution on Windows, Linux, and macOS local workstations.
+- Standard dependencies limited to NumPy, SciPy, Matplotlib, and PyYAML (optional JupyterLab for interactive research).
 
 ### NFR-2: Numerical Accuracy & Stability
 - Deterministic numerical execution.
