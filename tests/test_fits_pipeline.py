@@ -76,3 +76,4 @@ def test_fits_io_roundtrip(tmp_path: Path):
     assert obs.psf_kernel.shape == (15, 15)
     assert obs.header is not None
     assert obs.header["TARGET"] == "SDSS_J0946"
+

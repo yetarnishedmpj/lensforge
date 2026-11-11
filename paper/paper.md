@@ -99,3 +99,4 @@ Starting from an intentionally perturbed initial guess ($\theta_E = 1.25''$, $q 
 This research software was developed following open computational astrophysics standards, building upon foundational lensing theory developed by Kormann, Schneider, Bartelmann, Warren, Dye, Suyu, and the SLACS collaboration.
 
 # References
+

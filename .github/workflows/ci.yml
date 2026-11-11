@@ -43,3 +43,4 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         run: |
           python scripts/benchmark_slacs_reconstruction.py
+
