@@ -4,10 +4,11 @@
 
 LensForge is designed as a modular, scientific research framework for gravitational lensing and galaxy reconstruction. The primary software engineering objectives are:
 
-1. **Rigorous Separation of Concerns**: Mathematical physics is completely decoupled from rendering/visualization and data I/O.
+1. **Rigorous Separation of Concerns**: Mathematical physics is completely decoupled from rendering/visualization, instrumentation, and data I/O.
 2. **Deterministic & Vectorized Numerical Core**: Core physical routines rely exclusively on NumPy and SciPy array operations, supporting both scalar evaluations and vectorized 2D grids without memory bloat.
 3. **Explicit Error Policies**: Singularities (e.g., central ray divergence at $r=0$) and unphysical boundaries ($M \le 0$, $D_s \le D_l$) are trapped explicitly rather than silently propagating `NaN`s.
-4. **Local Workstation & CLI Portability**: Zero hardcoded local file paths, zero non-standard GUI dependencies, native cross-platform support (Windows/Linux/macOS), and simple editable installation (`pip install -e .`).
+4. **Semilinear Decoupling**: Solves the inverse problem by decoupling the inner linear source inversion (solved analytically via Cholesky decomposition) from the outer non-linear macro-lens optimization (solved via Nelder-Mead simplex search).
+5. **Local Workstation & CLI Portability**: Zero hardcoded local file paths, zero non-standard GUI dependencies, native cross-platform support (Windows/Linux/macOS), and simple editable installation (`pip install -e .`).
 
 ---
 
@@ -19,6 +20,12 @@ lensforge/
 ├── PRD.md                             # Product Requirements Document
 ├── pyproject.toml                     # Modern PEP 518/621 build specification
 ├── .gitignore                         # Scientific Python / Jupyter / IDE gitignore
+├── .github/
+│   └── workflows/
+│       └── ci.yml                     # GitHub Actions CI matrix (Linux, macOS, Windows)
+├── paper/
+│   ├── paper.md                       # JOSS submission paper draft
+│   └── paper.bib                      # BibTeX citations for astrophysics literature
 ├── configs/
 │   └── lens/
 │       ├── point_mass.yaml            # Parameter configuration file for point mass
@@ -30,12 +37,22 @@ lensforge/
 │   └── development_roadmap.md         # Phased research & development milestones
 ├── src/
 │   └── lensforge/
-│       ├── __init__.py                # Package exports and version metadata
+│       ├── __init__.py                # Package exports and version metadata (v0.4.0)
 │       ├── constants.py               # CODATA physical constants & angular conversions
+│       ├── cli.py                     # CLI entrypoints (lensforge-reconstruct)
+│       ├── cosmology/
+│       │   ├── __init__.py
+│       │   └── distances.py           # FLRW cosmological distance & Sigma_cr engine
+│       ├── data/
+│       │   ├── __init__.py
+│       │   └── fits_pipeline.py       # FITS I/O, sigma-clipping sky, annular masking
+│       ├── optimization/
+│       │   ├── __init__.py
+│       │   └── lens_optimizer.py      # Macro-lens non-linear fitting & semilinear MAP
 │       ├── physics/
 │       │   ├── __init__.py            # Physics API entry point
 │       │   ├── coordinates.py         # 2D angular coordinates, CoordinateGrid dataclass
-│       │   ├── distances.py           # Angular-diameter distances & Einstein radius (point-mass & SIS)
+│       │   ├── distances.py           # Angular-diameter distances & Einstein radius
 │       │   ├── lens_equation.py       # Thin-screen ray-tracing mapping
 │       │   ├── lens_potential.py      # Effective lensing potential & finite diff gradient
 │       │   ├── magnification.py       # Jacobian, signed/absolute magnification, parity
@@ -47,6 +64,16 @@ lensforge/
 │       │       ├── sie.py             # Singular Isothermal Ellipsoid model (KSB94)
 │       │       ├── shear.py           # External gravitational tidal shear
 │       │       └── composite.py       # Composite multi-component lens model
+│       ├── instrument/
+│       │   ├── __init__.py
+│       │   ├── psf.py                 # Gaussian & Pixelated PSF convolution
+│       │   └── noise.py               # Poisson photon shot noise & Gaussian read noise
+│       ├── inversion/
+│       │   ├── __init__.py
+│       │   ├── mapping.py             # Sparse bilinear deflection mapping matrix L
+│       │   ├── regularization.py      # Laplacian curvature & gradient prior matrices R
+│       │   ├── reconstructor.py       # Semilinear regularized inversion engine
+│       │   └── pipeline.py            # Automated galaxy reconstruction workflow
 │       ├── imaging/
 │       │   ├── __init__.py            # Imaging API entry point
 │       │   └── source_models.py       # Background galaxy profiles & ray-traced sampling
@@ -55,124 +82,69 @@ lensforge/
 │           └── lens_plots.py          # Publication-quality scientific figures
 ├── tests/
 │   ├── test_coordinates.py            # Unit conversion & coordinate grid tests
-│   ├── test_point_mass_lens.py        # Deflection, potential gradient, distance validation
+│   ├── test_cosmology.py              # FLRW distance, Astropy comparison, Sigma_cr tests
+│   ├── test_fits_pipeline.py          # FITS I/O, sky background, annular mask tests
 │   ├── test_image_positions.py        # Analytical image solver & algebraic invariants
-│   ├── test_magnification.py          # Parity, asymptotics, stability, caustic divergence
-│   ├── test_sis_lens.py               # SIS deflection, potential, image invariants, velocity dispersion
-│   ├── test_sie_lens.py               # SIE deflection, potential gradient, spherical limit, convergence
-│   └── test_shear_and_composite.py    # External shear & CompositeLens superposition tests
+│   ├── test_instrument.py             # PSF convolution & detector noise tests
+│   ├── test_inversion.py              # Mapping, regularization & Cholesky MAP tests
+│   ├── test_lens_optimizer.py         # Semilinear macro-lens convergence tests
+│   ├── test_magnification.py          # Parity, asymptotics, stability, caustic checks
+│   ├── test_point_mass_lens.py        # Deflection, potential gradient, distance validation
+│   ├── test_shear_and_composite.py    # External shear & CompositeLens superposition tests
+│   ├── test_sie_lens.py               # SIE deflection, potential gradient, spherical limit
+│   └── test_sis_lens.py               # SIS deflection, potential, image invariants
 ├── scripts/
-│   ├── demonstrate_point_mass_lens.py # Point-mass forward simulation demonstration
-│   └── demonstrate_galaxy_lens.py     # Realistic galaxy SIE+shear arc demonstration
+│   ├── benchmark_slacs_reconstruction.py  # SLACS SDSS J0946+1006 benchmark case study
+│   ├── reconstruct_galaxy.py              # Bayesian galaxy source reconstruction
+│   ├── demonstrate_galaxy_lens.py         # Realistic galaxy SIE+shear arc demonstration
+│   └── demonstrate_point_mass_lens.py     # Point-mass forward simulation demonstration
 └── notebooks/
     └── README.md                      # Local interactive research notebook instructions
 ```
 
 ---
 
-## 3. Data Flow Architecture
+## 3. Subsystem Interplay & Data Flow
 
-The forward modeling pipeline proceeds along a strictly unidirectional data flow:
+The full forward and semilinear inverse data flow proceeds as follows:
 
 ```mermaid
 flowchart TD
-    subgraph Inputs["Astrophysical Inputs"]
-        M["Lens Mass M [kg]"]
-        D["Angular Diameter Distances\n(D_l, D_s, D_ls) [m]"]
-        SrcParams["Source Galaxy Profile\n(Centroid, Size, Ellipticity)"]
+    subgraph Cosmology["Cosmological Framework (lensforge.cosmology)"]
+        Z["Redshifts (z_l, z_s)"] --> Distances["Angular Diameter Distances (D_l, D_s, D_ls)"]
+        Distances --> SigmaCr["Critical Surface Mass Density Sigma_cr"]
+        SigmaCr --> MassScale["Physical Mass & sigma_v Scaling"]
     end
 
-    subgraph Geometry["Relativistic Geometry"]
-        E["Einstein Radius\ntheta_E = sqrt(4GM/c^2 * D_ls / (D_l * D_s))"]
-        M --> E
-        D --> E
+    subgraph Data["Observational Data (lensforge.data)"]
+        FITS["Telescope FITS Observation"] --> Preproc["Background Subtraction & Annular Masking"]
+        Preproc --> ObsData["Calibrated Science Image d & Noise Map C_D"]
     end
 
-    subgraph GridEngine["Image Plane Discretization"]
-        Grid["CoordinateGrid (theta_x, theta_y)\n[arcsec or rad]"]
+    subgraph OuterLoop["Macro-Lens Non-Linear Optimization (lensforge.optimization)"]
+        InitEta["Initial Macro-Lens Guess eta = (theta_E, q, phi, gamma)"] --> Simplex["Nelder-Mead Simplex Optimization"]
+        Simplex --> LensModel["Parametric Lens Instance (SIE + Shear)"]
     end
 
-    subgraph DeflectionEngine["Lens Deflection & Ray Tracing"]
-        Defl["Deflection Field\nalpha(theta) = theta_E^2 * theta / |theta|^2"]
-        Trace["Backwards Ray Tracing\nbeta(theta) = theta - alpha(theta)"]
-        E --> Defl
-        Grid --> Defl
-        Defl --> Trace
-        Grid --> Trace
+    subgraph InnerLoop["Semilinear Source Inversion (lensforge.inversion)"]
+        LensModel --> RayTrace["Ray Trace Image Grid to Source Plane"]
+        RayTrace --> Mapping["Bilinear Mapping Operator L"]
+        Mapping --> Response["Instrument Response F = B * L"]
+        Response --> NormalEq["Cholesky Decomposition: (F^T C_D^-1 F + lambda R)"]
+        NormalEq --> SourceMAP["Reconstructed Source s_hat(eta)"]
+        SourceMAP --> Loss["Chi-squared / Log-Evidence"]
     end
 
-    subgraph SourceEngine["Surface Brightness Sampling"]
-        SrcModel["Source Surface Brightness S(beta)"]
-        LensedImg["Observed Surface Brightness\nI(theta) = S(beta(theta))"]
-        SrcParams --> SrcModel
-        Trace --> LensedImg
-        SrcModel --> LensedImg
-    end
-
-    subgraph Analytics["Analytic Diagnostics"]
-        ImgPos["Analytic Image Positions (theta_+, theta_-)"]
-        Mag["Magnifications (mu_+, mu_-, mu_tot)"]
-        E --> ImgPos
-        SrcParams --> ImgPos
-        E --> Mag
-        SrcParams --> Mag
-    end
-
-    subgraph Rendering["Visualization & Output"]
-        Plot["Publication Quality Multi-Panel Figure"]
-        Grid --> Plot
-        SrcModel --> Plot
-        LensedImg --> Plot
-        ImgPos --> Plot
-    end
+    Loss --> Simplex
+    Simplex --> BestFit["Converged Macro-Lens & Reconstructed Source Galaxy"]
 ```
 
 ---
 
-## 4. Architectural Boundaries and Component Responsibilities
+## 4. Architectural Boundaries
 
-### `lensforge.constants`
-- **Responsibility**: Scientific single source of truth for fundamental physical constants in SI units (CODATA values for $c$, $G$, $M_{\odot}$, astronomical distance conversions) and high-precision angular conversions.
-- **Rule**: Pure numerical constants and algebraic functions. Zero internal dependencies.
-
-### `lensforge.physics.coordinates`
-- **Responsibility**: Representation and generation of 2D angular sky coordinates, meshgrids, pixel sizes, and spatial bounding boxes (`CoordinateGrid`).
-- **Rule**: Validates shape compatibility and enforces strict separation between radians, arcseconds, and pixel indices.
-
-### `lensforge.physics.distances`
-- **Responsibility**: Computes angular-diameter distances and the relativistic Einstein angular radius $\theta_E$.
-- **Rule**: Validates physical boundary conditions ($M > 0$, $D_l > 0$, $D_s > 0$, $D_{ls} > 0$, and cosmological causal ordering $D_s > D_l$).
-
-### `lensforge.physics.lens_equation`
-- **Responsibility**: Evaluates the thin-screen gravitational lens equation $\boldsymbol{\beta} = \boldsymbol{\theta} - \boldsymbol{\alpha}(\boldsymbol{\theta})$ for backwards ray-tracing.
-- **Rule**: Operates purely on broadcast NumPy arrays.
-
-### `lensforge.physics.lens_potential`
-- **Responsibility**: Evaluates effective projected gravitational potential $\psi(\boldsymbol{\theta})$ and numerical derivatives via finite differences.
-- **Rule**: Houses explicit `SingularityError` to prevent unhandled zero-division.
-
-### `lensforge.physics.magnification`
-- **Responsibility**: Calculates signed, absolute, and unresolved total magnifications.
-- **Rule**: Employs rationalized algebraic expressions to completely eliminate catastrophic floating-point cancellation for large impact parameters ($u \gg 1$), ensuring strict topological parity preservation.
-
-### `lensforge.physics.models.point_mass`
-- **Responsibility**: High-level parametric class `PointMassLens` orchestrating deflection, potential, analytical image positions, and caustic detection.
-- **Rule**: Completely agnostic to camera pixelation, PSFs, and plotting frameworks.
-
-### `lensforge.imaging.source_models`
-- **Responsibility**: Continuous surface brightness distributions $S(\boldsymbol{\beta})$ of unlensed galaxies (e.g. `GaussianSource`), and ray-traced image-plane sampling via Liouville's theorem.
-- **Rule**: Decoupled from lens physics; only accepts source-plane coordinates $(\beta_x, \beta_y)$.
-
-### `lensforge.visualization.lens_plots`
-- **Responsibility**: Renders Matplotlib scientific figures with clear axis labels, physical units, critical curves (Einstein ring), and analytical markers.
-- **Rule**: Does not perform physics calculations; consumes precomputed arrays and dataclasses.
-
----
-
-## 5. Design for Future Phases
-
-The architecture is explicitly constructed to support modular extension without breaking existing APIs:
-
-- **Phase 2 (Extended Mass Profiles)**: New classes `SingularIsothermalSphere` and `SingularIsothermalEllipsoid` will implement the standard interface (`deflection`, `potential`, `ray_trace`).
-- **Phase 3 (Telescope Forward Model)**: A new `lensforge.instrument` module will introduce convolution kernels $\mathcal{P} * I$ (FFT-based PSF) and noise generators $\mathcal{N}$ (Gaussian readout noise and Poisson shot noise).
-- **Phase 4 (Source Inversion Engine)**: A new `lensforge.inversion` module will implement pixelated source reconstruction matrices $\mathbf{F} = \mathbf{B} \mathbf{L}$ with regularizing covariance operators (gradient and curvature priors) following the Warren & Dye (2003) and Treu (2010) frameworks.
+- **Physics Purity**: `lensforge.physics` contains zero plotting code and zero FITS I/O.
+- **Instrument Modeling**: `lensforge.instrument` encapsulates optical point spread function convolution and astronomical noise simulation without depending on specific lens profiles.
+- **Linear Inversion**: `lensforge.inversion` defines abstract linear operators ($\mathbf{L}, \mathbf{B}, \mathbf{R}$) independent of the specific mass profile implementation.
+- **Macro-Lens Fitting**: `lensforge.optimization` handles non-linear parameter estimation without hard-coding specific telescope parameters.
+- **Standardized Data Objects**: `AstroObservation`, `CoordinateGrid`, `ReconstructionResult`, and `MacroLensFitResult` provide clean, dataclass-based interfaces across the entire pipeline.

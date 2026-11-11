@@ -64,3 +64,4 @@ def test_observation_noise_statistics():
     pulls = (noisy_img - img) / noise_sigma
     assert np.isclose(np.mean(pulls), 0.0, atol=0.1)
     assert np.isclose(np.std(pulls), 1.0, atol=0.08)
+

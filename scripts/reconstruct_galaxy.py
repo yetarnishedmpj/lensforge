@@ -16,3 +16,4 @@ from lensforge.inversion.pipeline import run_galaxy_reconstruction
 if __name__ == "__main__":
     out_dir = project_root / "outputs"
     run_galaxy_reconstruction(out_dir)
+

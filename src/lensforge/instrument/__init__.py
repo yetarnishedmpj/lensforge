@@ -12,3 +12,4 @@ __all__ = [
     "PixelatedPSF",
     "add_observation_noise",
 ]
+

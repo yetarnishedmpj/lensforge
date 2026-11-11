@@ -1,6 +1,6 @@
 # LensForge Development Roadmap
 
-This document outlines the phased research and engineering progression for LensForge, moving from the mathematical foundations of point-mass lensing to full Bayesian galaxy source reconstruction from real space telescope observations.
+This document outlines the phased research and engineering progression for LensForge, moving from the mathematical foundations of point-mass lensing to full Bayesian galaxy source reconstruction from space telescope observations.
 
 ---
 
@@ -9,10 +9,11 @@ This document outlines the phased research and engineering progression for LensF
 ```mermaid
 flowchart LR
     P1["Phase 1\nPoint-Mass Foundation\n[COMPLETED]"] --> P2["Phase 2\nRealistic Galaxy Lens Profiles\n(SIS, SIE, Shear)\n[COMPLETED]"]
-    P2 --> P3["Phase 3\nTelescope Forward Model\n(PSF, Noise, Pixelation)"]
-    P3 --> P4["Phase 4\nRegularized Source Inversion\n(Warren & Dye Method)"]
-    P4 --> P5["Phase 5\nBayesian Parameter Inference\n(MCMC, Evidence)"]
-    P5 --> P6["Phase 6\nReal Space Telescope Data\n(HST & JWST Lenses)"]
+    P2 --> P3["Phase 3\nTelescope Forward Model\n(PSF, Poisson/Read Noise)\n[COMPLETED]"]
+    P3 --> P4["Phase 4\nRegularized Source Inversion\n(Warren & Dye Method)\n[COMPLETED]"]
+    P4 --> P5["Phase 5\nMacro-Lens Optimization\n(Bilevel Simplex Fitting)\n[COMPLETED]"]
+    P5 --> P6["Phase 6\nCosmology & FITS Pipeline\n(Astropy, SLACS Benchmark)\n[COMPLETED]"]
+    P6 --> P7["Phase 7\nSpace Telescope Data\n(HST & JWST Archives)\n[PLANNED]"]
 ```
 
 ---
@@ -34,7 +35,7 @@ flowchart LR
 
 ---
 
-### Phase 2: Realistic Galaxy Lens Profiles (SIS & SIE, External Shear)
+### Phase 2: Realistic Galaxy Lens Profiles (SIS, SIE, External Shear)
 - **Status**: Completed ✅
 - **Deliverables**:
   - `BaseLensModel` abstract interface with unified Jacobian, magnification, convergence, and shear routines.
@@ -53,53 +54,68 @@ flowchart LR
   - **Composite Lens Superposition**:
     - `CompositeLens` superposing mass components and tidal shear.
   - End-to-end forward demonstration (`scripts/demonstrate_galaxy_lens.py`) producing giant arcs and quad/double image morphologies.
-  - Complete 44-test automated test suite passing in $< 0.5$ seconds.
 
 ---
 
-### Phase 3: Realistic Telescope Observation Model
-- **Target**: Next Immediate Milestone
-- **Forward Model Formulation**:
-  $$\mathcal{D} = \mathcal{P} * \mathcal{L}_{\eta}(\mathcal{S}) + \mathcal{N}$$
-- **Components**:
+### Phase 3: Telescope Forward Model (Optics & Noise)
+- **Status**: Completed ✅
+- **Deliverables**:
   - `lensforge.instrument.psf`:
-    - 2D Gaussian, Airy disc, and empirical FITS pixelated telescope PSFs.
-    - Fast 2D FFT-based convolution with anti-aliasing.
+    - 2D Gaussian and pixelated telescope PSFs with fast FFT convolution and flux conservation.
   - `lensforge.instrument.noise`:
-    - Gaussian read noise ($\sigma_{\text{read}}$).
-    - Poissonian photon shot noise from galaxy and sky background.
-  - Sub-pixel supersampling and sensor pixel integration.
+    - Realistic Poisson photon shot noise from galaxy and background sky.
+    - Gaussian detector readout noise with physical exposure times and gains.
+    - Pixel-by-pixel variance and $1\sigma$ uncertainty maps $\mathbf{C}_D$ for $\chi^2$ statistical weighting.
 
 ---
 
-### Phase 4: Regularized Galaxy Source Inversion
-- **Objective**: Reconstruct the unlensed galaxy surface brightness $\mathcal{S}$ without assuming a rigid parametric profile (e.g. Gaussian or Sérsic).
-- **Mathematical Framework**:
-  - Linear discretization on Delaunay tessellation or adaptive Cartesian mesh.
-  - Response operator $\mathbf{f} = \mathbf{B} \mathbf{L} \mathbf{s} + \mathbf{n}$, where $\mathbf{B}$ is PSF blurring and $\mathbf{L}$ is lens deflection mapping.
-  - Regularized quadratic objective:
-    $$\mathcal{E}(\mathbf{s}) = \frac{1}{2} (\mathbf{d} - \mathbf{F} \mathbf{s})^T \mathbf{C}_D^{-1} (\mathbf{d} - \mathbf{F} \mathbf{s}) + \lambda \mathbf{s}^T \mathbf{R} \mathbf{s}$$
-  - Regularization operators $\mathbf{R}$: Zero-order gradient (norm), first-order gradient (smoothness), and second-order curvature (Laplacian).
-  - Analytic maximum a posteriori solution:
-    $$\hat{\mathbf{s}} = (\mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{F} + \lambda \mathbf{R})^{-1} \mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{d}$$
+### Phase 4: Semilinear Regularized Galaxy Source Inversion
+- **Status**: Completed ✅
+- **Deliverables**:
+  - Implementation of the **Warren & Dye (2003) / Suyu et al. (2006)** semilinear inversion formulation.
+  - Sparse bilinear deflection mapping operator $\mathbf{L}$.
+  - Combined telescope response operator $\mathbf{F} = \mathbf{B} \mathbf{L}$.
+  - Spatial prior regularization matrices $\mathbf{R}$ (discrete 2D Laplacian curvature, 1st-order gradient, and 0th-order norm).
+  - Maximum a posteriori (MAP) linear inversion via numerical Cholesky decomposition of $(\mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{F} + \lambda \mathbf{R})$.
+  - Automated Bayesian optimal regularization parameter ($\lambda^*$) search maximizing log-evidence $\ln P(\mathbf{d}|\lambda, \boldsymbol{\eta})$.
+  - Command-line interface `lensforge-reconstruct` and 6-panel diagnostic dashboard.
 
 ---
 
-### Phase 5: Bayesian Inference & Lens Parameter Optimization
-- **Simultaneous Parameter Optimization**:
-  - Optimize macro-lens parameters $\boldsymbol{\eta} = (\theta_E, \boldsymbol{\theta}_l, q, \phi, \gamma)$ in an outer loop while analytically solving for the optimal source $\hat{\mathbf{s}}(\boldsymbol{\eta})$ in an inner loop.
-- **Algorithms**:
-  - Scipy nonlinear conjugate gradient / L-BFGS-B for maximum likelihood point estimation.
-  - Markov Chain Monte Carlo (MCMC) ensemble sampling (e.g., Affine Invariant Sampler) for posterior credible intervals.
-  - Bayesian Evidence evaluation for model selection.
+### Phase 5: Macro-Lens Non-Linear Optimization
+- **Status**: Completed ✅
+- **Deliverables**:
+  - Bilevel semilinear optimization engine (`lensforge.optimization`):
+    - Simultaneous outer-loop optimization of lens parameters $\boldsymbol{\eta} = (\theta_E, q, \phi, \gamma, \phi_\gamma)$ and inner-loop linear reconstruction of pixelated source galaxy $\hat{\mathbf{s}}(\boldsymbol{\eta})$.
+    - Nelder-Mead simplex search with quadratic penalty bounds for robust convergence on discrete pixel grids.
+    - Parameter uncertainty estimation and convergence tracking.
 
 ---
 
-### Phase 6: Space Telescope Data & Local Workstation Acceleration
-- **Observational Datasets**:
-  - Ingestion of FITS data from Hubble Space Telescope (HST SLACS, CANDELS) and JWST (COSMOS-Web) strong lenses.
-  - Astrometric alignment and background subtraction pipelines.
-- **Execution Scaling**:
-  - Local GPU-accelerated ray-tracing (NVIDIA CUDA via PyTorch / CuPy backends).
-  - Multi-threaded CPU evaluation for fast MCMC parameter exploration.
-  - Standalone scientific replication pipelines reproducing published astrophysical reconstructions.
+### Phase 6: Cosmological Engine & Astronomical FITS Pipeline
+- **Status**: Completed ✅
+- **Deliverables**:
+  - `lensforge.cosmology`:
+    - Flat $\Lambda\text{CDM}$ FLRW angular diameter distance integration matching Planck 2018 parameters.
+    - Critical surface mass density $\Sigma_{\text{cr}}$ in SI and astronomical units ($M_\odot/\text{pc}^2$).
+    - Validated against `astropy.cosmology` within $1\%$.
+  - `lensforge.data`:
+    - Multi-extension FITS file I/O with WCS coordinate headers.
+    - Iterative $\sigma$-clipped sky background estimation.
+    - Annular deflector masking.
+  - **SLACS Benchmark Case Study (`scripts/benchmark_slacs_reconstruction.py`)**:
+    - End-to-end case study reproducing published parameters for SLACS Einstein ring **SDSS J0946+1006** ($z_l=0.222, z_s=0.609$).
+    - Sub-percent parameter recovery ($\theta_E = 1.395''$ vs $1.38''$), physical enclosed mass $M(\le \theta_E) = 3.07 \times 10^{11} M_\odot$, and velocity dispersion $\sigma_v = 285.1\text{ km/s}$.
+  - **Research Engineering Artifacts**:
+    - Complete JOSS paper draft (`paper/paper.md`, `paper/paper.bib`).
+    - Multi-platform continuous integration (CI) via GitHub Actions (`.github/workflows/ci.yml`).
+    - Complete 58-test deterministic test suite.
+
+---
+
+### Phase 7: Space Telescope Observational Science
+- **Status**: Planned ⏳
+- **Objectives**:
+  - Ingestion and reconstruction of archival Hubble Space Telescope (HST) ACS and JWST NIRCam strong gravitational lenses.
+  - Multi-band joint source reconstruction across optical and near-infrared filters.
+  - GPU-accelerated ray tracing and nested sampling (e.g., via `dynesty` or `emcee`).

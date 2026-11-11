@@ -113,3 +113,4 @@ def test_end_to_end_source_reconstruction_with_psf():
     # C. Model prediction in image plane should closely match the data
     rms_image_diff = np.sqrt(np.mean((result.model_image - blurred_lensed) ** 2))
     assert rms_image_diff < 0.10
+

@@ -4,7 +4,7 @@ LensForge provides numerical methods, forward models, and inversion frameworks
 for gravitational lens modeling and galaxy source reconstruction.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "LensForge Research Team"
 
 from lensforge.constants import (
@@ -40,6 +40,21 @@ from lensforge.inversion import (
     build_lens_mapping_matrix,
     build_regularization_matrix,
 )
+from lensforge.cosmology import (
+    FlatLambdaCDMCosmology,
+    PLANCK18,
+)
+from lensforge.data import (
+    AstroObservation,
+    create_annular_mask,
+    estimate_sky_background,
+    load_fits_observation,
+    save_fits_observation,
+)
+from lensforge.optimization import (
+    MacroLensFitResult,
+    fit_lens_parameters,
+)
 
 __all__ = [
     "__version__",
@@ -68,4 +83,13 @@ __all__ = [
     "ReconstructionResult",
     "build_lens_mapping_matrix",
     "build_regularization_matrix",
+    "FlatLambdaCDMCosmology",
+    "PLANCK18",
+    "AstroObservation",
+    "load_fits_observation",
+    "save_fits_observation",
+    "estimate_sky_background",
+    "create_annular_mask",
+    "MacroLensFitResult",
+    "fit_lens_parameters",
 ]

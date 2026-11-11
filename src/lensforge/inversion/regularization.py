@@ -124,3 +124,4 @@ def build_regularization_matrix(
         raise ValueError(
             f"Unknown regularization method '{method}'. Must be 'zeroth', 'gradient', or 'curvature'."
         )
+

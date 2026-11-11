@@ -240,3 +240,4 @@ class SourceReconstructor:
         )
         best_lambda = float(10.0**res_opt.x)
         return self.reconstruct(data_image, noise_sigma, regularization_lambda=best_lambda)
+

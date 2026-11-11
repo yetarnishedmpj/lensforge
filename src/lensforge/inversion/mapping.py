@@ -110,3 +110,4 @@ def build_lens_mapping_matrix(
 
     mapping_matrix = sparse.csr_matrix((data, (rows, cols)), shape=(n_img_tot, n_src_tot), dtype=np.float64)
     return mapping_matrix
+

@@ -68,3 +68,4 @@ def add_observation_noise(
     noise_sigma = np.sqrt(var_flux)
 
     return observed_image, noise_sigma
+

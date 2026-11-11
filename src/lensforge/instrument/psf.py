@@ -113,3 +113,4 @@ class PixelatedPSF(BasePSF):
     def kernel(self) -> np.ndarray:
         """Return normalized PSF kernel."""
         return self._kernel.copy()
+

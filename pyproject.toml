@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lensforge"
-version = "0.3.0"
+version = "0.4.0"
 description = "Computational astrophysics research repository for gravitational lens modeling and galaxy source reconstruction"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,7 +20,7 @@ keywords = [
     "inverse-problems"
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
     "Topic :: Scientific/Engineering :: Physics",
@@ -32,6 +32,7 @@ dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.10.0",
     "matplotlib>=3.7.0",
+    "astropy>=5.0.0",
     "pyyaml>=6.0"
 ]
 
