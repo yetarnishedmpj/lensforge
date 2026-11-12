@@ -39,6 +39,8 @@ def main() -> None:
     target_group = parser.add_mutually_exclusive_group(required=True)
     target_group.add_argument(
         "--target",
+        "--lens",
+        dest="target",
         type=str,
         help=f"Celebrated lens preset: {list(KNOWN_LENS_CATALOG.keys())} or SIMBAD resolvable name.",
     )
