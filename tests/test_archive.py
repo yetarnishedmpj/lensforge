@@ -85,3 +85,4 @@ def test_extract_fits_cutout(tmp_path):
         assert np.max(cutout_data) == 100.0
         assert "PIXSCALE" in cutout_hdr
         assert np.isclose(cutout_hdr["PIXSCALE"], 0.05, rtol=1e-3)
+

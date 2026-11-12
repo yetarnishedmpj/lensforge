@@ -51,3 +51,9 @@ outputs/
 *.pdf
 !docs/*.png
 !docs/*.pdf
+
+# Archival raw downloads (large FITS files > 100MB)
+real_data/*_drz.fits
+real_data/*_drc.fits
+real_data/*.tmp
+

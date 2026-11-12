@@ -5,10 +5,12 @@ of gravitationally lensed galaxies from NASA's Mikulski Archive for Space Telesc
 """
 
 from pathlib import Path
+import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 import warnings
 
 import numpy as np
+import requests
 
 try:
     from astropy.coordinates import SkyCoord
@@ -190,12 +192,18 @@ def fetch_mast_observation(
         if len(drizzled) > 0:
             filtered_products = drizzled
 
+    # Prefer direct target visits over massive multi-degree skycell mosaic tiles
+    if "productFilename" in filtered_products.colnames:
+        non_skycell = filtered_products[["skycell" not in str(fn).lower() for fn in filtered_products["productFilename"]]]
+        if len(non_skycell) > 0:
+            filtered_products = non_skycell
+
     if len(filtered_products) == 0:
         raise FileNotFoundError("Found observation records in MAST, but no calibrated FITS science products available.")
 
-    # Sort to prioritize highest calibration level
-    if "calib_level" in filtered_products.colnames:
-        filtered_products.sort("calib_level", reverse=True)
+    # Sort to prioritize targeted single-visit products with compact file size
+    if "size" in filtered_products.colnames:
+        filtered_products.sort("size")
 
     target_products = filtered_products[:max_files]
     filenames = target_products["productFilename"] if "productFilename" in target_products.colnames else []
@@ -206,25 +214,54 @@ def fetch_mast_observation(
     products_to_download = []
 
     for row in target_products:
-        fname = row["productFilename"]
-        # MAST downloads into a subdirectory structure: download_dir/mastDownload/<obs_collection>/<obs_id>/<fname>
+        fname = str(row["productFilename"])
         potential_existing = list(out_dir.rglob(fname))
+        valid_cached = False
         if potential_existing:
-            print(f"[MAST Cache] Found cached product: {potential_existing[0].name}")
-            downloaded_paths.append(potential_existing[0])
-        else:
+            cand = potential_existing[0]
+            expected_size = row["size"] if "size" in row.colnames else 0
+            if cand.stat().st_size > 0 and (expected_size == 0 or cand.stat().st_size >= expected_size * 0.95):
+                print(f"[MAST Cache] Found verified cached product: {cand.name}")
+                downloaded_paths.append(cand)
+                valid_cached = True
+            else:
+                cand.unlink(missing_ok=True)
+
+        if not valid_cached:
             products_to_download.append(row)
 
     if products_to_download:
-        from astropy.table import vstack
-        # Reconstruct table slice for download
-        dl_table = vstack(products_to_download)
-        manifest = Observations.download_products(dl_table, download_dir=str(out_dir))
-        for row in manifest:
-            if row["Status"] == "COMPLETE":
-                loc = Path(row["Local Path"])
-                if loc.exists() and loc not in downloaded_paths:
-                    downloaded_paths.append(loc)
+        for row in products_to_download:
+            fname = str(row["productFilename"])
+            data_uri = str(row["dataURI"])
+            dest_file = out_dir / fname
+            download_url = f"https://mast.stsci.edu/api/v0.1/Download/file?uri={data_uri}"
+            print(f"[MAST Streaming] Downloading {fname}...")
+            temp_file = dest_file.with_suffix(".tmp")
+            try:
+                with requests.get(download_url, stream=True, timeout=60) as resp:
+                    resp.raise_for_status()
+                    total_bytes = int(resp.headers.get("content-length", 0))
+                    downloaded_bytes = 0
+                    with open(temp_file, "wb") as f_out:
+                        for chunk in resp.iter_content(chunk_size=1024 * 512):
+                            if chunk:
+                                f_out.write(chunk)
+                                downloaded_bytes += len(chunk)
+                                if total_bytes > 0:
+                                    pct = (downloaded_bytes / total_bytes) * 100.0
+                                    mb_done = downloaded_bytes / (1024 * 1024)
+                                    mb_tot = total_bytes / (1024 * 1024)
+                                    sys.stdout.write(f"\r  --> Progress: {mb_done:.1f}/{mb_tot:.1f} MB ({pct:.1f}%)")
+                                    sys.stdout.flush()
+                print()
+                if temp_file.exists():
+                    temp_file.replace(dest_file)
+                downloaded_paths.append(dest_file)
+            except Exception as dl_err:
+                if temp_file.exists():
+                    temp_file.unlink(missing_ok=True)
+                raise RuntimeError(f"Failed to download {fname} from MAST: {dl_err}")
 
     return downloaded_paths
 
