@@ -274,7 +274,7 @@ If you use LensForge in your research or academic applications, please cite:
 
 ```bibtex
 @article{lensforge2026,
-  author = {LensForge Research Team},
+  author = {LensForge Joshi Maharshi},
   title = {LensForge: A Bayesian Framework for Gravitational Lens Modeling and Galaxy Source Reconstruction},
   journal = {Journal of Open Source Software (Draft)},
   year = {2026}
