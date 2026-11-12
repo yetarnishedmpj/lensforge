@@ -1,7 +1,7 @@
 # LensForge: Gravitational Lens Modeling and Galaxy Source Reconstruction
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-58%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)]()
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue.svg)](.github/workflows/ci.yml)
 [![JOSS Paper](https://img.shields.io/badge/JOSS-paper%20draft-orange.svg)](paper/paper.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -205,9 +205,30 @@ tests/test_sis_lens.py ........                                          [100%]
 
 ---
 
-## 5. Running Case Studies & Benchmarks
+## 5. Running Case Studies & Real Space Telescope Pipeline
 
-### 1. SLACS SDSS J0946+1006 Benchmark Case Study
+### 1. Real Hubble Space Telescope (HST) Archival Ingestion & Reconstruction
+LensForge includes a built-in NASA MAST query and streaming ingestion pipeline to download real science data and perform complete Bayesian lens modeling:
+
+```bash
+# Step 1: Query NASA MAST and download real HST ACS/WFC F814W cutout
+python scripts/download_real_lens_data.py --lens SDSSJ0946+1006 --cutout-size 8.0
+
+# Step 2: Run end-to-end non-linear optimization & linear regularized source inversion
+python scripts/reconstruct_real_lens.py
+```
+
+Outputs generated:
+- `real_data/SDSSJ0946+1006_F814W_cutout_8.0arcsec.fits`: Calibrated $8.0'' \times 8.0''$ science cutout with astrometric WCS coordinates.
+- `outputs/real_sdss_j0946_reconstruction.png`: High-resolution 6-panel scientific publication dashboard:
+  1. Real HST ACS/WFC observation ($160 \times 160$ px, $0.05''/\text{px}$) with annular aperture mask.
+  2. Best-fit forward-lensed model ($P * \mathbf{F}\hat{\mathbf{s}}$).
+  3. Normalized fit residuals $(D - M)/\sigma$.
+  4. Inverted unlensed source galaxy surface brightness $\hat{\mathbf{s}}$.
+  5. Optimization convergence history across simplex iterations.
+  6. Inferred physical quantities (Einstein radius $\theta_E$, axis ratio $q$, position angle $\phi$, enclosed dark matter mass $M$, and stellar velocity dispersion $\sigma_v$).
+
+### 2. SLACS SDSS J0946+1006 Benchmark Case Study
 Run the complete scientific benchmark replicating the published properties of the Sloan Lens ACS Survey Einstein ring:
 
 ```bash
@@ -216,15 +237,9 @@ python scripts/benchmark_slacs_reconstruction.py
 
 Outputs generated:
 - `outputs/slacs_j0946_observation.fits`: Multi-extension FITS observation with WCS headers, calibrated science data, noise variance map, and PSF kernel.
-- `outputs/slacs_j0946_benchmark.png`: High-resolution 6-panel publication dashboard displaying:
-  1. Mock HST ACS F814W observation with annular deflector mask contour.
-  2. Best-fit lensed model reconstruction with critical curve overlay.
-  3. Normalized fit residuals $(D - M)/\sigma$ with $\chi^2_{\text{red}}$ metric.
-  4. Inverted intrinsic source galaxy surface brightness $\hat{\mathbf{s}}$ with caustic curves.
-  5. Optimization convergence history across simplex evaluations.
-  6. Physical parameter recovery summary card ($\theta_E, q, \phi, \gamma, \sigma_v, M_{\text{lens}}$).
+- `outputs/slacs_j0946_benchmark.png`: High-resolution 6-panel publication dashboard.
 
-### 2. Standalone Bayesian Galaxy Reconstruction
+### 3. Standalone Bayesian Galaxy Reconstruction
 Run the regularized linear inversion pipeline from CLI or script:
 
 ```bash
@@ -247,7 +262,7 @@ Saves the 6-panel reconstruction diagnostic dashboard to `outputs/reconstruction
 | **Phase 4** | Semilinear Source Inversion | **Completed** ✅ | Bilinear response matrix $\mathbf{F}$, Laplacian curvature prior $\mathbf{R}$, Cholesky MAP solver. |
 | **Phase 5** | Macro-Lens Optimization | **Completed** ✅ | Nelder-Mead simplex search with penalty bounds, Bayesian evidence, SLACS benchmark. |
 | **Phase 6** | Astronomical Pipeline & FITS | **Completed** ✅ | Astropy FITS I/O, WCS metadata, sigma-clipped sky background, annular masking. |
-| **Phase 7** | Space Telescope Data | **Planned** ⏳ | Application to archival HST ACS and JWST NIRCam strong gravitational lenses. |
+| **Phase 7** | Real Space Telescope Pipeline | **Completed** ✅ | NASA MAST API ingestion, WCS cutouts, and real HST ACS lens reconstruction. |
 
 ---
 
