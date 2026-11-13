@@ -4,7 +4,7 @@ LensForge provides numerical methods, forward models, and inversion frameworks
 for gravitational lens modeling and galaxy source reconstruction.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__ = "LensForge Research Team"
 
 from lensforge.constants import (
@@ -23,7 +23,9 @@ from lensforge.constants import (
 from lensforge.physics.models import (
     BaseLensModel,
     CompositeLens,
+    EllipticalPowerLaw,
     ExternalShear,
+    NFWHalo,
     PointMassLens,
     SingularIsothermalEllipsoid,
     SingularIsothermalSphere,
@@ -43,6 +45,10 @@ from lensforge.inversion import (
 from lensforge.cosmology import (
     FlatLambdaCDMCosmology,
     PLANCK18,
+    fermat_potential,
+    infer_h0_from_time_delay,
+    time_delay_days,
+    time_delay_seconds,
 )
 from lensforge.data import (
     AstroObservation,
@@ -73,6 +79,8 @@ __all__ = [
     "PointMassLens",
     "SingularIsothermalSphere",
     "SingularIsothermalEllipsoid",
+    "EllipticalPowerLaw",
+    "NFWHalo",
     "ExternalShear",
     "CompositeLens",
     "BasePSF",
@@ -85,6 +93,10 @@ __all__ = [
     "build_regularization_matrix",
     "FlatLambdaCDMCosmology",
     "PLANCK18",
+    "fermat_potential",
+    "time_delay_seconds",
+    "time_delay_days",
+    "infer_h0_from_time_delay",
     "AstroObservation",
     "load_fits_observation",
     "save_fits_observation",

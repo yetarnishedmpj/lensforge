@@ -162,6 +162,51 @@ class FlatLambdaCDMCosmology:
         theta_e_rad = 4.0 * np.pi * ((velocity_dispersion / C_LIGHT)**2) * (d_ls / d_s)
         return float(rad2arcsec(theta_e_rad))
 
+    def time_delay_distance(
+        self,
+        z_lens: float,
+        z_source: float,
+    ) -> float:
+        """Compute the cosmological time-delay distance D_Delta_t in meters.
+
+        D_Delta_t = (1 + z_l) * (D_l * D_s / D_ls)
+
+        This distance scale is inversely proportional to H_0, making strong lens time delays
+        a premier independent probe of the Hubble constant and cosmological expansion.
+        """
+        d_l, d_s, d_ls = self.lensing_distances(z_lens, z_source)
+        return float((1.0 + z_lens) * (d_l * d_s / d_ls))
+
+    def time_delay_distance_mpc(
+        self,
+        z_lens: float,
+        z_source: float,
+    ) -> float:
+        """Compute the cosmological time-delay distance D_Delta_t in Megaparsecs (Mpc)."""
+        return self.time_delay_distance(z_lens, z_source) / MEGAPARSEC
+
+    def infer_h0_from_time_delay_distance(
+        self,
+        z_lens: float,
+        z_source: float,
+        d_delta_t_mpc: float,
+    ) -> float:
+        """Infer the Hubble constant H_0 (km/s/Mpc) from a measured time-delay distance.
+
+        Args:
+            z_lens: Lens deflector redshift.
+            z_source: Background source redshift.
+            d_delta_t_mpc: Measured time-delay distance in Mpc (> 0).
+
+        Returns:
+            Inferred H_0 in km/s/Mpc.
+        """
+        if d_delta_t_mpc <= 0.0:
+            raise ValueError(f"Time-delay distance must be positive, got {d_delta_t_mpc}.")
+        # D_Delta_t scales strictly as 1 / H_0 for fixed Omega_m
+        d_dt_ref = self.time_delay_distance_mpc(z_lens, z_source)
+        return float(self.h0 * (d_dt_ref / d_delta_t_mpc))
+
 
 # Standard cosmological instance (Planck 2018 baseline)
 PLANCK18 = FlatLambdaCDMCosmology(h0=67.4, omega_m=0.315)

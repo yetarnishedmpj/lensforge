@@ -11,6 +11,8 @@ Contains parametric mass distributions:
 
 from lensforge.physics.models.base import BaseLensModel
 from lensforge.physics.models.composite import CompositeLens
+from lensforge.physics.models.epl import EllipticalPowerLaw
+from lensforge.physics.models.nfw import NFWHalo
 from lensforge.physics.models.point_mass import PointMassLens
 from lensforge.physics.models.shear import ExternalShear
 from lensforge.physics.models.sie import SingularIsothermalEllipsoid
@@ -21,6 +23,8 @@ __all__ = [
     "PointMassLens",
     "SingularIsothermalSphere",
     "SingularIsothermalEllipsoid",
+    "EllipticalPowerLaw",
+    "NFWHalo",
     "ExternalShear",
     "CompositeLens",
 ]

@@ -1,7 +1,7 @@
 # LensForge: Gravitational Lens Modeling and Galaxy Source Reconstruction
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)]()
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue.svg)](.github/workflows/ci.yml)
 [![JOSS Paper](https://img.shields.io/badge/JOSS-paper%20draft-orange.svg)](paper/paper.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -22,44 +22,48 @@ where:
 
 ---
 
-## 1. Research-Grade Capabilities (Version 0.4.0)
+## 1. Research-Grade Capabilities (Version 0.5.0)
 
 LensForge provides an end-to-end computational pipeline for strong gravitational lensing research:
 
-1. **Macro-Lens Non-Linear Optimization & Bilevel Inversion ([`lensforge.optimization`](src/lensforge/optimization))**:
+1. **Macro-Lens Non-Linear Optimization & Bayesian MCMC ([`lensforge.optimization`](src/lensforge/optimization))**:
    - Joint estimation of deflector parameters $\boldsymbol{\eta} = (\theta_E, q, \phi, \gamma, \phi_\gamma)$ via outer-loop simplex search (Nelder-Mead with quadratic penalty bounds).
+   - Full Affine-Invariant Ensemble Markov Chain Monte Carlo (MCMC via `emcee` + `corner`) mapping multi-dimensional posterior probability distributions and 2D parameter degeneracies.
    - Inner-loop analytical linear reconstruction of the pixelated source $\hat{\mathbf{s}}(\boldsymbol{\eta})$ via Cholesky decomposition of $(\mathbf{F}^T \mathbf{C}_D^{-1} \mathbf{F} + \lambda \mathbf{R})$.
-   - Hessian-based parameter uncertainty estimation and Bayesian evidence evaluation.
 
-2. **Cosmological Distance & Mass Engine ([`lensforge.cosmology`](src/lensforge/cosmology))**:
+2. **Time-Delay Cosmography & Hubble Constant ($H_0$) Engine ([`lensforge.cosmology.time_delay`](src/lensforge/cosmology/time_delay.py))**:
+   - Analytical Fermat potential calculation $\tau(\boldsymbol{\theta}, \boldsymbol{\beta}) = \frac{1}{2}|\boldsymbol{\theta} - \boldsymbol{\beta}|^2 - \psi(\boldsymbol{\theta})$.
+   - Cosmological Time-Delay Distance $D_{\Delta t} = (1 + z_l) \frac{D_l D_s}{D_{ls}} \propto \frac{1}{H_0}$.
+   - Direct Bayesian posterior inference of the Hubble Constant ($H_0$) from variable quasar arrival time delays, providing an independent constraint to help resolve the cosmic **Hubble Tension**.
+
+3. **Extended Astrophysical Mass Profiles ([`lensforge.physics.models`](src/lensforge/physics/models))**:
+   - **Elliptical Power-Law (EPL / PEMD)** with variable 3D mass density slope $\gamma' \in (1, 3)$, generalizing isothermal models to steep cusps and shallow cores.
+   - **Navarro-Frenk-White (NFW)** spherical dark matter halo profile (Wright & Brainerd 2000) parameterized by scale radius $\theta_s$ and characteristic convergence $\kappa_s$.
+   - Singular Isothermal Ellipsoid (SIE, Kormann et al. 1994) with arbitrary position angles $\phi$.
+   - External Gravitational Shear ($\gamma_1, \gamma_2$) for environmental tidal perturbations.
+   - Point-mass (Schwarzschild lens) and Singular Isothermal Sphere (SIS).
+   - Multi-component `CompositeLens` superpositions (e.g. Baryonic bulge + NFW halo).
+
+4. **Cosmological Distance & Mass Engine ([`lensforge.cosmology`](src/lensforge/cosmology))**:
    - Full FLRW comoving and angular-diameter distance integration ($D_l, D_s, D_{ls}$) under flat $\Lambda\text{CDM}$ (Planck 2018 parameters).
    - Critical surface mass density $\Sigma_{\text{cr}}$ in both physical SI ($\text{kg/m}^2$) and astronomical units ($M_\odot/\text{pc}^2$).
    - Physical conversion from angular Einstein radii to enclosed deflector mass $M(\le R_E)$ and theoretical central velocity dispersion $\sigma_v$.
-   - Validated against `astropy.cosmology` within $1\%$.
 
-3. **FITS Astronomical Data Pipeline ([`lensforge.data`](src/lensforge/data))**:
-   - Multi-extension FITS file ingestion and export with WCS coordinate headers.
-   - Robust iterative $\sigma$-clipped sky background estimation and RMS noise determination.
-   - Annular deflector masking to isolate gravitationally lensed arcs and exclude deflector starlight subtraction residuals.
+5. **FITS Astronomical Data Pipeline & NASA MAST Ingestion ([`lensforge.data`](src/lensforge/data))**:
+   - Direct NASA MAST archive query and streaming retrieval of space telescope science cutouts (HST ACS/WFC).
+   - Astrometric World Coordinate System (WCS) preservation and sub-aperture extraction.
+   - Iterative $\sigma$-clipped sky background estimation and annular deflector starlight masking.
 
-4. **Linear Regularized Inversion Engine ([`lensforge.inversion`](src/lensforge/inversion))**:
+6. **Linear Regularized Inversion Engine ([`lensforge.inversion`](src/lensforge/inversion))**:
    - Implementation of the **Warren & Dye (2003) / Suyu et al. (2006)** semilinear inversion formulation.
-   - Sparse bilinear deflection mapping operator $\mathbf{L}$.
-   - Telescope response operator $\mathbf{F} = \mathbf{B} \mathbf{L}$ incorporating optical PSF blurring.
+   - Sparse bilinear deflection mapping operator $\mathbf{L}$ and blurred response operator $\mathbf{F} = \mathbf{B} \mathbf{L}$.
    - Spatial prior regularization matrices $\mathbf{R}$ (discrete 2D Laplacian curvature, 1st-order gradient, and 0th-order norm).
    - Automated Bayesian optimal regularization parameter ($\lambda^*$) search maximizing marginal log-evidence $\ln P(\mathbf{d}|\lambda, \boldsymbol{\eta})$.
 
-5. **Telescope Optics & Detector Noise ([`lensforge.instrument`](src/lensforge/instrument))**:
+7. **Telescope Optics & Detector Noise ([`lensforge.instrument`](src/lensforge/instrument))**:
    - 2D Gaussian and pixelated telescope PSFs with fast FFT convolution and flux conservation.
    - Realistic Poisson photon shot noise from galaxy and background sky + Gaussian detector readout noise.
    - Pixel-by-pixel variance and $1\sigma$ uncertainty maps $\mathbf{C}_D$ for rigorous $\chi^2$ statistical weighting.
-
-6. **Astrophysical Lens Models ([`lensforge.physics.models`](src/lensforge/physics/models))**:
-   - Point-mass (Schwarzschild lens with analytical image roots $\theta_{\pm}$ and magnification invariants).
-   - Singular Isothermal Sphere (SIS) parameterized by 1D velocity dispersion $\sigma_v$.
-   - Singular Isothermal Ellipsoid (SIE, Kormann et al. 1994) with arbitrary position angles $\phi$.
-   - External Gravitational Shear ($\gamma_1, \gamma_2$) for environmental tidal perturbations.
-   - Multi-component `CompositeLens` superpositions.
 
 7. **SLACS Astrophysical Benchmark Case Study ([`scripts/benchmark_slacs_reconstruction.py`](scripts/benchmark_slacs_reconstruction.py))**:
    - End-to-end reconstruction reproducing the published properties of the iconic SLACS lens **SDSS J0946+1006** ($z_l=0.222, z_s=0.609$).
@@ -216,19 +220,40 @@ python scripts/download_real_lens_data.py --lens SDSSJ0946+1006 --cutout-size 8.
 
 # Step 2: Run end-to-end non-linear optimization & linear regularized source inversion
 python scripts/reconstruct_real_lens.py
+
+# Step 3: Run rigorous Bayesian MCMC posterior sampling & corner plot
+python scripts/rigorous_lens_mcmc.py
 ```
 
 Outputs generated:
 - `real_data/SDSSJ0946+1006_F814W_cutout_8.0arcsec.fits`: Calibrated $8.0'' \times 8.0''$ science cutout with astrometric WCS coordinates.
-- `outputs/real_sdss_j0946_reconstruction.png`: High-resolution 6-panel scientific publication dashboard:
+- `outputs/real_sdss_j0946_reconstruction.png`: High-resolution 8-panel scientific publication dashboard:
   1. Real HST ACS/WFC observation ($160 \times 160$ px, $0.05''/\text{px}$) with annular aperture mask.
-  2. Best-fit forward-lensed model ($P * \mathbf{F}\hat{\mathbf{s}}$).
-  3. Normalized fit residuals $(D - M)/\sigma$.
-  4. Inverted unlensed source galaxy surface brightness $\hat{\mathbf{s}}$.
-  5. Optimization convergence history across simplex iterations.
-  6. Inferred physical quantities (Einstein radius $\theta_E$, axis ratio $q$, position angle $\phi$, enclosed dark matter mass $M$, and stellar velocity dispersion $\sigma_v$).
+  2. Active aperture zoom with sub-pixel centroiding.
+  3. Best-fit forward-lensed model ($P * \mathbf{F}\hat{\mathbf{s}}$) with tangential critical curve (lime green).
+  4. Normalized fit residuals $(D - M)/\sigma$.
+  5. Inverted unlensed source galaxy surface brightness $\hat{\mathbf{s}}$ with caustic diamond curve (cyan).
+  6. 1D Azimuthally-averaged radial flux profile (real data vs model vs aperture).
+  7. Optimization loss convergence history.
+  8. Inferred physical quantities ($\theta_E$, $q$, $\phi$, $\gamma$, $M$, and $\sigma_v$).
+- `outputs/real_sdss_j0946_mcmc_corner.png`: Affine-invariant MCMC posterior distribution Corner Plot with 1D/2D $68\%$ and $95\%$ credible regions.
+- `outputs/SDSS_J0946_reconstruction_report.md`: Complete written scientific analysis report.
 
-### 2. SLACS SDSS J0946+1006 Benchmark Case Study
+### 2. Time-Delay Cosmography & Hubble Constant ($H_0$) Inference
+Run the cosmological time-delay engine measuring $H_0$ independently of the cosmic distance ladder:
+
+```bash
+python scripts/cosmography_h0_inference.py
+```
+
+Outputs generated:
+- `outputs/cosmography_h0_inference.png`: 4-panel publication dashboard showing:
+  1. Gravitational Fermat potential 2D surface $\tau(\boldsymbol{\theta})$ with multiple image stationary points.
+  2. Simulated variable quasar light curves with physical arrival time delays.
+  3. Cosmological Time-Delay Distance scaling $D_{\Delta t} \propto 1 / H_0$.
+  4. Inferred $H_0$ posterior probability distribution compared against Planck CMB and SH0ES Cepheids.
+
+### 3. SLACS SDSS J0946+1006 Benchmark Case Study
 Run the complete scientific benchmark replicating the published properties of the Sloan Lens ACS Survey Einstein ring:
 
 ```bash
@@ -239,7 +264,7 @@ Outputs generated:
 - `outputs/slacs_j0946_observation.fits`: Multi-extension FITS observation with WCS headers, calibrated science data, noise variance map, and PSF kernel.
 - `outputs/slacs_j0946_benchmark.png`: High-resolution 6-panel publication dashboard.
 
-### 3. Standalone Bayesian Galaxy Reconstruction
+### 4. Standalone Bayesian Galaxy Reconstruction
 Run the regularized linear inversion pipeline from CLI or script:
 
 ```bash
@@ -263,6 +288,7 @@ Saves the 6-panel reconstruction diagnostic dashboard to `outputs/reconstruction
 | **Phase 5** | Macro-Lens Optimization | **Completed** ✅ | Nelder-Mead simplex search with penalty bounds, Bayesian evidence, SLACS benchmark. |
 | **Phase 6** | Astronomical Pipeline & FITS | **Completed** ✅ | Astropy FITS I/O, WCS metadata, sigma-clipped sky background, annular masking. |
 | **Phase 7** | Real Space Telescope Pipeline | **Completed** ✅ | NASA MAST API ingestion, WCS cutouts, and real HST ACS lens reconstruction. |
+| **Phase 8** | Bayesian MCMC & Cosmography | **Completed** ✅ | Affine-invariant MCMC (`emcee`), Corner plots, NFW halos, Elliptical Power-Law, and $H_0$ inference. |
 
 ---
 

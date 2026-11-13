@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lensforge"
-version = "0.4.0"
+version = "0.5.0"
 description = "Computational astrophysics research repository for gravitational lens modeling and galaxy source reconstruction"
 readme = "README.md"
 requires-python = ">=3.11"
